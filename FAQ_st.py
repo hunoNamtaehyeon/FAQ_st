@@ -18,12 +18,12 @@ df = df[1:].reset_index(drop=True)
 df.columns = ['순번', '구분', '질문', '답변']
 ##############################################################################
 ##### local
-from dotenv import load_dotenv
-load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
-api_key = os.getenv('key')
+# from dotenv import load_dotenv
+# load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
+# api_key = os.getenv('key')
 
 ##### streamlit
-# api_key = st.secrets["api_key"]
+api_key = st.secrets["api_key"]
 ##############################################################################
 client = OpenAI(api_key=api_key)
 
