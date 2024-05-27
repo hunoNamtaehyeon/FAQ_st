@@ -137,8 +137,7 @@ def run_conversation(messages, model):
 prompt = '''당신은 채용시스템의 FAQ기능을 대신합니다. 
             사용자의 질문에 올바른 답변을 합니다. 
             기준질문과 답변이 1:1로 매칭되어있는 아래 정보를 토대로 가장 맥락이 비슷한 답변을 내놓습니다.
-            채용관련한 질문이 아니라면 "채용FAQ시스템입니다. 채용에 관련된 내용으로만 질문해주세요."라고 답변합니다.'''
-            
+            사용자의 질문에 답변을 할 수 없는 상황이라면 "해당 질문에 대한 적절한 답변을 찾을 수 없습니다.\n자세한 사항은 우측 FAQ-BOARD를 참고하세요."라고 답변합니다.'''
 
 first_assistant = f'''기준질문-답변 데이터 : {for_assistant_without_vector}
 
@@ -162,11 +161,11 @@ if 'messages_GPT-3.5' not in st.session_state:
 if 'user_input' not in st.session_state:
     st.session_state['user_input'] = ''
 
-        
 col1, col2 = st.columns(2)
 with col1:
     st.header("FAQ - GPT.ver")
     chat_1 = st.container(height=610)
+    input_1 = st.container(height=73)
     with chat_1:
         button_col1, button_col2 = st.columns([0.85,0.15])
         with button_col1:
@@ -191,7 +190,7 @@ with col1:
                             st.write(message["content"])
                             tool_result = message["content"]
             
-    with st.container(height=73):
+    with input_1:
         user_input = st.chat_input("질문을 입력하세요.")
         if user_input:
             st.session_state[f'messages_{radio}'].append({"role": "user", "content": user_input})
@@ -207,7 +206,7 @@ with col1:
             st.session_state[f'messages_{radio}'].append({"role": answer_role, "content": answer_content})
             with st.chat_message(answer_role):
                 st.write_stream(stream_data(answer_content))
-                if "채용FAQ시스템입니다." not in answer_content:
+                if "해당 질문에 대한 적절한 답변을 찾을 수 없습니다." not in answer_content:
                     no1_question = answer_content.split('"')[1].split("]")[-1].strip()
                     res = search_docs(j_df, no1_question)
                     if len(res) > 0:
