@@ -12,7 +12,7 @@ from openai import OpenAI
 
 st.set_page_config(layout="wide")
 
-df = pd.read_excel('./한난_23하 공채_FAQ_최종_230816_수정.xlsx')
+df = pd.read_excel('./한난_23하 공채_FAQ_최종_230816_수정.xlsx', engine='openpyxl')
 df.dropna(axis=0, inplace=True)
 df = df[1:].reset_index(drop=True)
 df.columns = ['순번', '구분', '질문', '답변']
