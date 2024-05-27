@@ -199,7 +199,7 @@ with col1:
         with chat_1:
             with st.chat_message('user'):
                 st.write(user_input)
-            messages = st.session_state[f'messages_{radio}']
+            messages = st.session_state[f'messages_{radio}'][:2] + [st.session_state[f'messages_{radio}'][-1]]
             response_message = run_conversation(messages, model)
             answer_role = response_message.choices[0].message.role
             answer_content = response_message.choices[0].message.content
