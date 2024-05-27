@@ -218,7 +218,7 @@ with col1:
                                     st.write(row['답변'])
 
 with col2:
-    st.header("FAQ - BORAD.ver")
+    st.header("FAQ - BOARD.ver")
     with st.container(height=700):
         for rdx, row in j_df.iterrows():
             label = f"**[{rdx+1}] [{row['구분']}] {row['질문']}**"
