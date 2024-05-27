@@ -8,7 +8,7 @@ import re
 import copy
 
 from openai import OpenAI
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 st.set_page_config(layout="wide")
 
