@@ -158,9 +158,6 @@ if 'messages_GPT-3.5' not in st.session_state:
     st.session_state['messages_GPT-3.5'].append({"role": "system", "content": prompt})
     st.session_state['messages_GPT-3.5'].append({"role": "assistant", "content": first_assistant})
 
-if 'user_input' not in st.session_state:
-    st.session_state['user_input'] = ''
-
 col1, col2 = st.columns(2)
 with col1:
     st.header("FAQ - GPT.ver")
