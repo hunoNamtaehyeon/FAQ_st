@@ -6,9 +6,9 @@ import numpy as np
 import os
 import re
 import copy
+import time
 
 from openai import OpenAI
-# from dotenv import load_dotenv
 
 st.set_page_config(layout="wide")
 
@@ -16,18 +16,24 @@ df = pd.read_excel('./한난_23하 공채_FAQ_최종_230816_수정.xlsx', engine
 df.dropna(axis=0, inplace=True)
 df = df[1:].reset_index(drop=True)
 df.columns = ['순번', '구분', '질문', '답변']
-
+##############################################################################
 ##### local
-# load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
-# api_key = os.getenv('key')
+from dotenv import load_dotenv
+load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
+api_key = os.getenv('key')
 
 ##### streamlit
-api_key = st.secrets["api_key"]
-
+# api_key = st.secrets["api_key"]
+##############################################################################
 client = OpenAI(api_key=api_key)
 
 # model = "gpt-3.5-turbo-16k-0613"
-
+    
+def stream_data(m_c):
+    for word in m_c.split(" "):
+        yield word + " "
+        time.sleep(0.05)
+        
 def get_current_weather(location, unit="fahrenheit"):
     """Get the current weather in a given location"""
     if "tokyo" in location.lower():
@@ -116,6 +122,7 @@ if 'messages_GPT-3.5' not in st.session_state:
 if 'user_input' not in st.session_state:
     st.session_state['user_input'] = ''
 
+        
 col1, col2 = st.columns(2)
 with col1:
     st.header("FAQ - GPT.ver")
@@ -136,17 +143,27 @@ with col1:
             answer_role = response_message.choices[0].message.role
             answer_content = response_message.choices[0].message.content
             st.session_state[f'messages_{radio}'].append({"role": answer_role, "content": answer_content})
+    
     with chat_1:
         if len(st.session_state[f'messages_{radio}']) > 3:
-            for message in st.session_state[f'messages_{radio}'][2:]:
+            write_messages = st.session_state[f'messages_{radio}'][2:]
+            last_answer = len(write_messages)-1
+            for mdx, message in enumerate(write_messages):
                 if type(message) == dict:
                     if message["role"] in ['user', 'assistant']:
                         with st.chat_message(message["role"]):
-                            st.write(message["content"])
+                            if mdx != last_answer:
+                                st.write(message["content"])
+                            else:
+                                st.write_stream(stream_data(message["content"]))
                     if message["role"] in ['tool']:
                         with st.chat_message(message["role"]):
-                            st.write(message["content"])
-                        tool_result = message["content"]
+                            if mdx != last_answer:
+                                st.write(message["content"])
+                                tool_result = message["content"]
+                            else:
+                                st.write_stream(stream_data(message["content"]))
+                        
 with col2:
     st.header("FAQ - BORAD.ver")
     with st.container(height=700):
