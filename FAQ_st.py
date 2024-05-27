@@ -18,12 +18,14 @@ df = df[1:].reset_index(drop=True)
 df.columns = ['순번', '구분', '질문', '답변']
 ##############################################################################
 ##### local
-# from dotenv import load_dotenv
-# load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
-# api_key = os.getenv('key')
+try:
+    from dotenv import load_dotenv
+    load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
+    api_key = os.getenv('key')
 
 ##### streamlit
-api_key = st.secrets["api_key"]
+except:
+    api_key = st.secrets["api_key"]
 ##############################################################################
 client = OpenAI(api_key=api_key)
 
@@ -106,7 +108,16 @@ prompt = '''당신은 채용시스템의 FAQ기능을 대신합니다.
             사용자의 질문에 올바른 답변을 합니다. 
             기준질문과 답변이 1:1로 매칭되어있는 아래 정보를 토대로 가장 맥락이 비슷한 답변을 내놓습니다.
             채용관련한 질문이 아니라면 "채용FAQ시스템입니다. 채용에 관련된 내용으로만 질문해주세요."라고 답변합니다.'''
-first_assistant = f"기준질문-답변 데이터 : {df.to_json(orient='records',force_ascii=False)}"
+            
+first_assistant = f'''기준질문-답변 데이터 : {df.to_json(orient='records',force_ascii=False)}
+
+                       * 대화 예시 -> 
+                       USER : 연봉 얼마야?
+                       ASSISTANT : "[2] [공통] 모집 직급별 초임연봉은 얼마인가요?"에 대한 답변을 참고하세요 : \n
+                       신입직원 초임연봉은 6급(을)은 3,450만원 수준, 7급 2,650만원 수준입니다. (성과상여금 및 기타수당 제외, 세전기준)
+                       
+                       * 만약 위 대화 예시 형식을 따르지 않는다면 벌점을 주겠음.'''
+                       
 if 'messages_GPT-4o' not in st.session_state:
     st.session_state['messages_GPT-4o'] = []
     st.session_state['messages_GPT-4o'].append({"role": "system", "content": prompt})
@@ -124,46 +135,48 @@ if 'user_input' not in st.session_state:
 col1, col2 = st.columns(2)
 with col1:
     st.header("FAQ - GPT.ver")
-
     chat_1 = st.container(height=610)
     with chat_1:
-        radio = st.radio("모델 선택", ['GPT-4o', 'GPT-3.5'], horizontal=True, label_visibility='collapsed')
-        if radio == 'GPT-4o':
-            model = "gpt-4o-2024-05-13"
-        else:
-            model = "gpt-3.5-turbo-16k-0613"
+        button_col1, button_col2 = st.columns([0.85,0.15])
+        with button_col1:
+            radio = st.radio("모델 선택", ['GPT-4o', 'GPT-3.5'], horizontal=True, label_visibility='collapsed')
+            if radio == 'GPT-4o':
+                model = "gpt-4o-2024-05-13"
+            else:
+                model = "gpt-3.5-turbo-16k-0613"
+        with button_col2:
+            reset_button = st.button("대화 초기화")
+            if reset_button:
+                st.session_state[f'messages_{radio}'] = st.session_state[f'messages_{radio}'][:2]
+        if len(st.session_state[f'messages_{radio}']) > 3:
+            write_messages = st.session_state[f'messages_{radio}'][2:]
+            for mdx, message in enumerate(write_messages):
+                if type(message) == dict:
+                    if message["role"] in ['user', 'assistant']:
+                        with st.chat_message(message["role"]):
+                            st.write(message["content"])
+                    if message["role"] in ['tool']:
+                        with st.chat_message(message["role"]):
+                            st.write(message["content"])
+                            tool_result = message["content"]
             
     with st.container(height=73):
         user_input = st.chat_input("질문을 입력하세요.")
-        st.session_state['user_input'] = user_input
         if user_input:
-            st.session_state[f'messages_{radio}'].append({"role": "user", "content": st.session_state['user_input']})
+            st.session_state[f'messages_{radio}'].append({"role": "user", "content": user_input})
+            
+    if user_input:        
+        with chat_1:
+            with st.chat_message('user'):
+                st.write(user_input)
             messages = st.session_state[f'messages_{radio}']
             response_message = run_conversation(messages, model)
             answer_role = response_message.choices[0].message.role
             answer_content = response_message.choices[0].message.content
             st.session_state[f'messages_{radio}'].append({"role": answer_role, "content": answer_content})
-    
-    with chat_1:
-        if len(st.session_state[f'messages_{radio}']) > 3:
-            write_messages = st.session_state[f'messages_{radio}'][2:]
-            last_answer_idx = len(write_messages)-1
-            for mdx, message in enumerate(write_messages):
-                if type(message) == dict:
-                    if message["role"] in ['user', 'assistant']:
-                        with st.chat_message(message["role"]):
-                            if mdx != last_answer_idx:
-                                st.write(message["content"])
-                            else:
-                                st.write_stream(stream_data(message["content"]))
-                    if message["role"] in ['tool']:
-                        with st.chat_message(message["role"]):
-                            if mdx != last_answer_idx:
-                                st.write(message["content"])
-                                tool_result = message["content"]
-                            else:
-                                st.write_stream(stream_data(message["content"]))
-                        
+            with st.chat_message(answer_role):
+                st.write_stream(stream_data(answer_content))
+                    
 with col2:
     st.header("FAQ - BORAD.ver")
     with st.container(height=700):
