@@ -8,23 +8,30 @@ import time
 
 from openai import OpenAI
 
-with open('./datas/jinanbang/df_to_json_with_vertor.json', 'r') as f:
-    df = json.load(f)
-j_df = pd.DataFrame(df)
-for_assistant_without_vector = copy.deepcopy(df)
+file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/jinanbang'
+# file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/sujawon_jeonmunjik'
+
+with open(file_path + '/df_to_json_with_vertor.json', 'r') as f:
+    json_data = json.load(f)
+    
+json_df = pd.DataFrame(json_data)
+
+for_assistant_without_vector = copy.deepcopy(json_data)
 for row in for_assistant_without_vector:
     del row['embedded_vector']
+    
+with open(file_path + "/system_prompt.txt", 'r') as f:
+    system_prompt = "".join([r for r in f])
+with open(file_path + "/first_assistant.txt", 'r') as f:
+    first_assistant = "".join([r for r in f])
+first_assistant = f"기준질문-답변 데이터 : {for_assistant_without_vector}" + first_assistant
+
 ##############################################################################
 from dotenv import load_dotenv
 load_dotenv("/mnt/c/Users/USER/Desktop/nam/gpt/.env")
 api_key = os.getenv('key')
 ##############################################################################
 client = OpenAI(api_key=api_key)
-
-def stream_data(m_c):
-    for word in m_c.split(" "):
-        yield word + " "
-        time.sleep(0.05)
 
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
@@ -124,25 +131,13 @@ def run_conversation(messages, model):
 
 ###############################################################################################################
     
-prompt = '''당신은 채용시스템의 FAQ기능을 대신합니다. 
-            사용자의 질문에 올바른 답변을 합니다. 
-            기준질문과 답변이 1:1로 매칭되어있는 아래 정보를 토대로 가장 맥락이 비슷한 답변을 내놓습니다.
-            사용자의 질문에 답변을 할 수 없는 상황이라면 "해당 질문에 대한 적절한 답변을 찾을 수 없습니다.\n자세한 사항은 우측 FAQ-BOARD를 참고하세요."라고 답변합니다.'''
-
-first_assistant = f'''기준질문-답변 데이터 : {for_assistant_without_vector}
-
-                       * 대화 예시 -> 
-                       USER : 연봉 얼마야?
-                       ASSISTANT : "[2] [공통] 모집 직급별 초임연봉은 얼마인가요?"에 대한 답변을 참고하세요 : \n
-                       신입직원 초임연봉은 6급(을)은 3,450만원 수준, 7급 2,650만원 수준입니다. (성과상여금 및 기타수당 제외, 세전기준)
-                       
-                       * 만약 위 대화 예시 형식을 따르지 않는다면 벌점을 주겠음.'''
-
 model = "gpt-4o-2024-05-13"
-messages = [{"role": "system", "content": prompt}, {"role": "assistant", "content": first_assistant}]
+messages = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": first_assistant}]
 user_input = input("질문을 입력하세요.")
 if user_input:
     messages.append({"role": "user", "content": user_input})
+    print(messages)
+
     print("USER")
     print(user_input)
     print("="*80)
@@ -155,7 +150,7 @@ if user_input:
     print("="*80)
     if "해당 질문에 대한 적절한 답변을 찾을 수 없습니다." not in answer_content:
         no1_question = answer_content.split('"')[1].split("]")[-1].strip()
-        res = search_docs(j_df, no1_question)
+        res = search_docs(json_df, no1_question)
         if len(res) > 0:
             print("유사질문")
             for rdx, row in res.iterrows():

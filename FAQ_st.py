@@ -12,12 +12,29 @@ from openai import OpenAI
 
 st.set_page_config(layout="wide")
 
-with open('./datas/jinanbang/df_to_json_with_vertor.json', 'r') as f:
-    df = json.load(f)
-j_df = pd.DataFrame(df)
-for_assistant_without_vector = copy.deepcopy(df)
+gonggo = st.radio("공고 선택", ['지역난방공사', '수자원공사'], horizontal=True, label_visibility='collapsed')
+if gonggo == '지역난방공사':
+    file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/jinanbang'
+else:
+    file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/sujawon_jeonmunjik'
+
+with open(file_path + '/df_to_json_with_vertor.json', 'r') as f:
+    json_data = json.load(f)
+    
+json_df = pd.DataFrame(json_data)
+
+for_assistant_without_vector = copy.deepcopy(json_data)
 for row in for_assistant_without_vector:
     del row['embedded_vector']
+    
+with open(file_path + "/system_prompt.txt", 'r') as f:
+    system_prompt = "".join([r for r in f])
+with open(file_path + "/first_assistant.txt", 'r') as f:
+    first_assistant = "".join([r for r in f])
+first_assistant = f"기준질문-답변 데이터 : {for_assistant_without_vector}" + first_assistant
+
+model = "gpt-4o-2024-05-13"
+
 ##############################################################################
 ##### local
 try:
@@ -133,32 +150,12 @@ def run_conversation(messages, model):
     return response
 
 ###############################################################################################################
+          
+if f'messages_{gonggo}' not in st.session_state:
+    st.session_state[f'messages_{gonggo}'] = []
+    st.session_state[f'messages_{gonggo}'].append({"role": "system", "content": system_prompt})
+    st.session_state[f'messages_{gonggo}'].append({"role": "assistant", "content": first_assistant})
     
-prompt = '''당신은 채용시스템의 FAQ기능을 대신합니다. 
-            사용자의 질문에 올바른 답변을 합니다. 
-            기준질문과 답변이 1:1로 매칭되어있는 아래 정보를 토대로 가장 맥락이 비슷한 답변을 내놓습니다.
-            사용자의 질문에 답변을 할 수 없는 상황이라면 "해당 질문에 대한 적절한 답변을 찾을 수 없습니다.\n자세한 사항은 우측 FAQ-BOARD를 참고하세요."라고 답변합니다.'''
-
-# first_assistant = f'''기준질문-답변 데이터 : {str(for_assistant_without_vector).replace("'",'')}
-first_assistant = f'''기준질문-답변 데이터 : {for_assistant_without_vector}
-
-                       * 대화 예시 -> 
-                       USER : 연봉 얼마야?
-                       ASSISTANT : "[2] [공통] 모집 직급별 초임연봉은 얼마인가요?"에 대한 답변을 참고하세요 : \n
-                       신입직원 초임연봉은 6급(을)은 3,450만원 수준, 7급 2,650만원 수준입니다. (성과상여금 및 기타수당 제외, 세전기준)
-                       
-                       * 만약 위 대화 예시 형식을 따르지 않는다면 벌점을 주겠음.'''
-                       
-if 'messages_GPT-4o' not in st.session_state:
-    st.session_state['messages_GPT-4o'] = []
-    st.session_state['messages_GPT-4o'].append({"role": "system", "content": prompt})
-    st.session_state['messages_GPT-4o'].append({"role": "assistant", "content": first_assistant})
-    
-if 'messages_GPT-3.5' not in st.session_state:
-    st.session_state['messages_GPT-3.5'] = []
-    st.session_state['messages_GPT-3.5'].append({"role": "system", "content": prompt})
-    st.session_state['messages_GPT-3.5'].append({"role": "assistant", "content": first_assistant})
-
 col1, col2 = st.columns(2)
 with col1:
     st.header("FAQ - GPT.ver")
@@ -166,18 +163,12 @@ with col1:
     input_1 = st.container(height=73)
     with chat_1:
         button_col1, button_col2 = st.columns([0.85,0.15])
-        with button_col1:
-            radio = st.radio("모델 선택", ['GPT-4o', 'GPT-3.5'], horizontal=True, label_visibility='collapsed')
-            if radio == 'GPT-4o':
-                model = "gpt-4o-2024-05-13"
-            else:
-                model = "gpt-3.5-turbo-16k-0613"
         with button_col2:
             reset_button = st.button("대화 초기화")
             if reset_button:
-                st.session_state[f'messages_{radio}'] = st.session_state[f'messages_{radio}'][:2]
-        if len(st.session_state[f'messages_{radio}']) > 3:
-            write_messages = st.session_state[f'messages_{radio}'][2:]
+                st.session_state[f'messages_{gonggo}'] = st.session_state[f'messages_{gonggo}'][:2]
+        if len(st.session_state[f'messages_{gonggo}']) > 3:
+            write_messages = st.session_state[f'messages_{gonggo}'][2:]
             for mdx, message in enumerate(write_messages):
                 if type(message) == dict:
                     if message["role"] in ['user', 'assistant']:
@@ -191,22 +182,22 @@ with col1:
     with input_1:
         user_input = st.chat_input("질문을 입력하세요.")
         if user_input:
-            st.session_state[f'messages_{radio}'].append({"role": "user", "content": user_input})
+            st.session_state[f'messages_{gonggo}'].append({"role": "user", "content": user_input})
             
     if user_input:
         with chat_1:
             with st.chat_message('user'):
                 st.write(user_input)
-            messages = st.session_state[f'messages_{radio}'][:2] + [st.session_state[f'messages_{radio}'][-1]]
+            messages = st.session_state[f'messages_{gonggo}'][:2] + [st.session_state[f'messages_{gonggo}'][-1]]
             response_message = run_conversation(messages, model)
             answer_role = response_message.choices[0].message.role
             answer_content = response_message.choices[0].message.content
-            st.session_state[f'messages_{radio}'].append({"role": answer_role, "content": answer_content})
+            st.session_state[f'messages_{gonggo}'].append({"role": answer_role, "content": answer_content})
             with st.chat_message(answer_role):
                 st.write_stream(stream_data(answer_content))
                 if "해당 질문에 대한 적절한 답변을 찾을 수 없습니다." not in answer_content:
                     no1_question = answer_content.split('"')[1].split("]")[-1].strip()
-                    res = search_docs(j_df, no1_question)
+                    res = search_docs(json_df, no1_question)
                     if len(res) > 0:
                         with st.popover("유사질문 확인하기"):
                             for rdx, row in res.iterrows():
@@ -218,7 +209,7 @@ with col1:
 with col2:
     st.header("FAQ - BOARD.ver")
     with st.container(height=700):
-        for rdx, row in j_df.iterrows():
+        for rdx, row in json_df.iterrows():
             label = f"**[{rdx+1}] [{row['구분']}] {row['질문']}**"
             with st.expander(label, expanded=False):
                 st.divider()
