@@ -13,10 +13,11 @@ from openai import OpenAI
 st.set_page_config(layout="wide")
 
 gonggo = st.radio("공고 선택", ['지역난방공사', '수자원공사'], horizontal=True, label_visibility='collapsed')
+
 if gonggo == '지역난방공사':
-    file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/jinanbang'
+    file_path = os.getcwd() + '/datas/jinanbang'
 else:
-    file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/sujawon_jeonmunjik'
+    file_path = os.getcwd() + '/datas/sujawon_jeonmunjik'
 
 with open(file_path + '/df_to_json_with_vertor.json', 'r') as f:
     json_data = json.load(f)
