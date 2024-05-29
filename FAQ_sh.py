@@ -8,8 +8,8 @@ import time
 
 from openai import OpenAI
 
-file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/jinanbang'
-# file_path = '/mnt/c/Users/USER/Desktop/nam/FAQ_st/datas/sujawon_jeonmunjik'
+file_path = os.getcwd() + '/datas/jinanbang'
+# file_path = os.getcwd() + '/datas/sujawon_jeonmunjik'
 
 with open(file_path + '/df_to_json_with_vertor.json', 'r') as f:
     json_data = json.load(f)
