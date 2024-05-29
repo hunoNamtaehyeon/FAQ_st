@@ -14,7 +14,6 @@ st.set_page_config(layout="wide")
 
 gonggo = st.radio("공고 선택", ['지역난방공사', '수자원공사'], horizontal=True, label_visibility='collapsed')
 
-st.write(os.getcwd())
 if gonggo == '지역난방공사':
     file_path = os.getcwd() + '/datas/jinanbang'
 else:
