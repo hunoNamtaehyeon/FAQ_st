@@ -15,7 +15,7 @@ st.set_page_config(layout="wide")
 gonggo = st.radio("공고 선택", ['지역난방공사', '수자원공사'], horizontal=True, label_visibility='collapsed')
 
 if gonggo == '지역난방공사':
-    file_path = os.getcwd() + '/datas/jinanbang'
+    file_path = os.getcwd() + '/datas/jinanbang2024'
 else:
     file_path = os.getcwd() + '/datas/sujawon_jeonmunjik'
 
@@ -211,7 +211,7 @@ with col2:
     st.header("FAQ - BOARD.ver")
     with st.container(height=700):
         for rdx, row in json_df.iterrows():
-            label = f"**[{rdx+1}] [{row['구분']}] {row['질문']}**"
+            label = f"[{rdx+1}] [{row['구분']}] {row['질문']}"
             with st.expander(label, expanded=False):
                 st.divider()
                 st.write(row['답변'])

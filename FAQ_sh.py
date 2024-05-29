@@ -8,7 +8,7 @@ import time
 
 from openai import OpenAI
 
-file_path = os.getcwd() + '/datas/jinanbang'
+file_path = os.getcwd() + '/datas/jinanbang2024'
 # file_path = os.getcwd() + '/datas/sujawon_jeonmunjik'
 
 with open(file_path + '/df_to_json_with_vertor.json', 'r') as f:
@@ -136,7 +136,7 @@ messages = [{"role": "system", "content": system_prompt}, {"role": "assistant", 
 user_input = input("질문을 입력하세요.")
 if user_input:
     messages.append({"role": "user", "content": user_input})
-    print(messages)
+    # print(messages)
 
     print("USER")
     print(user_input)
@@ -144,16 +144,20 @@ if user_input:
     response_message = run_conversation(messages, model)
     answer_role = response_message.choices[0].message.role
     answer_content = response_message.choices[0].message.content
+    
+    # if "에 대한 답변을 참고하세요 :" in answer_content:
+    #     answer_content = "".join(answer_content.split("에 대한 답변을 참고하세요 :")[1:]).strip()
+        
     messages.append({"role": answer_role, "content": answer_content})
     print(answer_role.upper())
     print(answer_content)
     print("="*80)
-    if "해당 질문에 대한 적절한 답변을 찾을 수 없습니다." not in answer_content:
-        no1_question = answer_content.split('"')[1].split("]")[-1].strip()
-        res = search_docs(json_df, no1_question)
-        if len(res) > 0:
-            print("유사질문")
-            for rdx, row in res.iterrows():
-                label = f"**[{rdx+1}] [{row['구분']}] {row['질문']}**"
-                print(label)
-            print("="*80)
+    # if "해당 질문에 대한 적절한 답변을 찾을 수 없습니다." not in answer_content:
+    #     no1_question = answer_content.split('"')[1].split("]")[-1].strip()
+    #     res = search_docs(json_df, no1_question)
+    #     if len(res) > 0:
+    #         print("유사질문")
+    #         for rdx, row in res.iterrows():
+    #             label = f"**[{rdx+1}] [{row['구분']}] {row['질문']}**"
+    #             print(label)
+    #         print("="*80)
